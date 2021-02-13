@@ -10,8 +10,15 @@ struct Point {
 };
 
 struct Task {
-	int score, P;
+	int S, P; // score; number of assembly points
+	int D;    // assembly manhattan distance
 	vector<Point> assembly;
+};
+
+struct Arm {
+	int M;                     // chosen mountpoint
+	vector<int> tasks;         // chosen tasks
+	vector<char> instructions; // instructions
 };
 
 int W, H; // width (columns) and height (rows)
@@ -22,6 +29,7 @@ int L;    // time steps
 
 vector<Point> mounts;
 vector<Task> tasks;
+vector<Arm> arms;
 
 int dist(Point a, Point b) {
 	return abs(a.x - b.x) + abs(a.y - b.y);
@@ -30,16 +38,30 @@ int dist(Point a, Point b) {
 void read() {
 	cin >> W >> H >> R >> M >> T >> L;
 	mounts.resize(M);
-	for (int i = 0; i < M; i++) {
-		cin >> mounts[i].x >> mounts[i].y;
+	for (auto &mount : mounts) {
+		cin >> mount.x >> mount.y;
 	}
 	tasks.resize(T);
-	for (int i = 0; i < T; i++) {
-		cin >> tasks[i].score >> tasks[i].P;
-		tasks[i].assembly.resize(tasks[i].P);
-		for (int j = 0; j < tasks[i].P; j++) {
-			cin >> tasks[i].assembly[j].x >> tasks[i].assembly[j].y;
+	for (auto &task : tasks) {
+		cin >> task.S >> task.P;
+		task.assembly.resize(task.P);
+		for (auto &ass : task.assembly) {
+			cin >> ass.x >> ass.y;
 		}
+		task.D = 0;
+		for (int i = 1; i < task.P; i++) {
+			task.D += dist(task.assembly[i - 1], task.assembly[i]);
+		}
+	}
+}
+
+void write() {
+	fmt::print("{}\n", arms.size());
+	for (const auto &arm : arms) {
+		fmt::print("{} {} {} {}\n", mounts[arm.M].x, mounts[arm.M].y,
+				   arm.tasks.size(), arm.instructions.size());
+		fmt::print("{}\n", fmt::join(arm.tasks, " "));
+		fmt::print("{}\n", fmt::join(arm.instructions, " "));
 	}
 }
 
@@ -57,11 +79,9 @@ void stats() {
 	int S = 0;
 	int D = 0;
 	for (auto &task : tasks) {
-		S += task.score;
+		S += task.S;
 		A += task.P;
-		for (int i = 1; i < task.P; i++) {
-			D += dist(task.assembly[i - 1], task.assembly[i]);
-		}
+		D += task.D;
 	}
 	fmt::print("{} assembly points ({:.2f}/task)\n", A, 1.0 * A / T);
 	fmt::print("{} total score ({:.2f}/task)\n", S, 1.0 * S / T);

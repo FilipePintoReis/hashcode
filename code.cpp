@@ -23,6 +23,10 @@ int L;    // time steps
 vector<Point> mounts;
 vector<Task> tasks;
 
+int dist(Point a, Point b) {
+	return abs(a.x - b.x) + abs(a.y - b.y);
+}
+
 void read() {
 	cin >> W >> H >> R >> M >> T >> L;
 	mounts.resize(M);
@@ -41,7 +45,46 @@ void read() {
 
 // *****
 
-void stats() {}
+void stats() {
+	fmt::print("{}x{}\n", W, H);
+	fmt::print("Robots: {} @ {} mountpoints\n", R, M);
+	fmt::print("{} tasks\n", T);
+	fmt::print("{} timesteps\n", L);
+	fmt::print("\n");
+
+	// Task statistics
+	int A = 0; // total assembly points
+	int S = 0;
+	int D = 0;
+	for (auto &task : tasks) {
+		S += task.score;
+		A += task.P;
+		for (int i = 1; i < task.P; i++) {
+			D += dist(task.assembly[i - 1], task.assembly[i]);
+		}
+	}
+	fmt::print("{} assembly points ({:.2f}/task)\n", A, 1.0 * A / T);
+	fmt::print("{} total score ({:.2f}/task)\n", S, 1.0 * S / T);
+	fmt::print("{} assembly travel ({:.2f}/task)\n", D, 1.0 * D / T);
+
+	vector<string> mat(W, string(H, ' '));
+	for (auto mount : mounts) {
+		auto [x, y] = mount;
+		mat[x][y] = 'M';
+	}
+	for (const auto &task : tasks) {
+		for (auto ass : task.assembly) {
+			auto [x, y] = ass;
+			mat[x][y] = '.';
+		}
+	}
+
+	fmt::print("+{}+\n", string(H, '-'));
+	for (const auto &row : mat) {
+		fmt::print("|{}|\n", row);
+	}
+	fmt::print("+{}+\n", string(H, '-'));
+}
 
 // *****
 
@@ -62,5 +105,6 @@ int main(int argc, char **argv) {
 	}
 	cin.rdbuf(input.rdbuf());
 	read();
+	stats();
 	return 0;
 }

@@ -1,0 +1,15 @@
+5x4
+Robots: 2 @ 3 mountpoints
+3 tasks
+5 timesteps
+
+4 assembly points (1.33/task)
+16 total score (5.33/task)
+1 assembly travel (0.33/task)
++----+
+|    |
+| M M|
+|   .|
+|  M.|
+|.   |
++----+

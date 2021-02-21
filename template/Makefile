@@ -8,7 +8,7 @@ CC := g++
 CODE := ./code.cpp
 EXE := ./hack
 LIBS := -lfmt
-INPUT_FILES := $(shell find input/ -name '*.txt')
+INPUT_FILES := $(shell find input/ -type f)
 
 include cpp-flags.make
 CXXFLAGS += $(LIBS)

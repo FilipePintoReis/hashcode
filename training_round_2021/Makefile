@@ -44,6 +44,11 @@ run: debug
 fast: perfm
 	@read -e -p "Input file: " file ; $(EXE) $$file
 
+# Build in debug mode and run under valgrind
+valgrind: debug
+	@clear
+	@read -e -p "Input file: " file ; valgrind $(EXE) $$file
+
 # Compile for debugging and run each input
 each: debug
 	@for file in $(INPUT_FILES); do $(EXE) $$file ; done
@@ -51,11 +56,6 @@ each: debug
 # Compile for debugging and run each input
 fasteach: perfm
 	@for file in $(INPUT_FILES); do $(EXE) $$file ; done
-
-# Build in debug mode and run under valgrind
-valgrind: debug
-	@clear
-	@read -e -p "Input file:" file ; $(EXE) $$file
 
 clean:
 	@rm -f $(EXE) core vgcore.* *.log

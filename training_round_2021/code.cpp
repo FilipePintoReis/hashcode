@@ -1,7 +1,7 @@
 #include "lib.hpp"
 
-using pizza_t = vector<short>;     // ordered list of ingredients in a pizza
-using selection_t = vector<short>; // selection of pizzas for delivery
+using pizza_t = vector<int>;     // ordered list of ingredients in a pizza
+using selection_t = vector<int>; // selection of pizzas for delivery
 
 int M;                  // number of pizzas
 int C;                  // number of different ingredients (ids are [0,C[)
@@ -43,10 +43,10 @@ void write(ofstream &out) {
 	for (const auto &team : D2) {
 		print(out, "{} {} {}\n", 2, team[0], team[1]);
 	}
-	for (const auto &team : D2) {
+	for (const auto &team : D3) {
 		print(out, "{} {} {} {}\n", 3, team[0], team[1], team[2]);
 	}
-	for (const auto &team : D2) {
+	for (const auto &team : D4) {
 		print(out, "{} {} {} {} {}\n", 4, team[0], team[1], team[2], team[3]);
 	}
 }
@@ -81,17 +81,8 @@ void stats(ofstream &out) {
 // ***** SOLUTION
 // *****
 
-// Sorting method number 1:
-
-struct LargestPizzasFirst {};
-
-set<Phantom> universe;
-int t2 = 0, t3 = 0, t4 = 0; // number of selections currently prepared
-long total_score = 0;
-
-// How many ingredients in common do two pizzas have?
 struct Evaluation {
-	int A, B, C, D; // in a, int b, int both, in only one. A + B == C + D.
+	int A, B, C, D; // in a, in b, in both, in one. A + B == C + D.
 };
 
 // A phantom pizza that is the result of aggregating two or more pizzas
@@ -100,6 +91,33 @@ struct Phantom {
 	selection_t selection;
 	int ingredients() const { return pizza.size(); }
 	int people() const { return selection.size(); }
+	string str() const {
+		return format("[{}/{} ({})]", ingredients(), people(),
+					  fmt::join(selection, ", "));
+	}
+};
+
+// Phantom sorters
+struct LargestPhantomsFirstSort {
+	bool operator()(const Phantom &a, const Phantom &b) const {
+		if (a.ingredients() != b.ingredients())
+			return a.ingredients() > b.ingredients();
+		else if (a.people() != b.people())
+			return a.people() < b.people();
+		else
+			return a.selection < b.selection;
+	}
+};
+
+struct SmallestPhantomsFirstSort {
+	bool operator()(const Phantom &a, const Phantom &b) const {
+		if (a.ingredients() != b.ingredients())
+			return a.ingredients() < b.ingredients();
+		else if (a.people() != b.people())
+			return a.people() < b.people();
+		else
+			return a.selection < b.selection;
+	}
 };
 
 Evaluation evaluate(const pizza_t &a, const pizza_t &b) {
@@ -129,6 +147,10 @@ pizza_t merge_pizzas(const pizza_t &a, const pizza_t &b) {
 		else
 			result.push_back(a[i]), i++, j++;
 	}
+	while (i < A)
+		result.push_back(a[i++]);
+	while (j < B)
+		result.push_back(b[j++]);
 	return result;
 }
 
@@ -138,6 +160,12 @@ Phantom merge_phantoms(const Phantom &a, const Phantom &b) {
 	selection.insert(selection.end(), begin(b.selection), end(b.selection));
 	return {pizza, selection};
 }
+
+// *****
+
+vector<Phantom> universe;
+int t2 = 0, t3 = 0, t4 = 0; // number of selections currently prepared
+long total_score = 0;
 
 bool available(int p) {
 	return (p == 2 && t2 < T2) || (p == 3 && t3 < T3) || (p == 4 && t4 < T4);
@@ -153,7 +181,7 @@ void deliver(const Phantom &a) {
 	} else {
 		assert(false);
 	}
-	total_score += long(a.ingredients()) * a.ingredients();
+	total_score += 1L * a.ingredients() * a.ingredients();
 }
 
 void adjust(int ap, int bp) {
@@ -164,41 +192,65 @@ void adjust(int ap, int bp) {
 }
 
 void solve() {
-	while (!universe.empty() && (t2 || t3 || t4)) {
-		Phantom a = *universe.begin();
-		universe.erase(a);
+	universe.resize(M);
+	for (int i = 0; i < M; i++) {
+		universe[i] = Phantom{pizzas[i], {i}};
+	}
+
+	auto phantomLess = LargestPhantomsFirstSort{};
+
+	while (!universe.empty()) {
+		for (uint i = 0; i + 1 < universe.size(); i++) {
+			if (phantomLess(universe[i], universe.back())) {
+				swap(universe[i], universe.back());
+			}
+		}
+		Phantom a = universe.back();
+		universe.pop_back();
 
 		double best_ratio = 1.01;
-		Phantom best;
+		int best_index = -1;
 
-		for (const auto &b : universe) {
+		for (uint i = 0; i + 1 < universe.size(); i++) {
+			const auto &b = universe[i];
 			if (available(a.people() + b.people())) {
 				auto [A, B, C, D] = evaluate(a.pizza, b.pizza);
 				if (best_ratio > C / (C + D)) {
 					best_ratio = C / (C + D);
-					best = b;
+					best_index = i;
+					if (C == 0)
+						break;
 				}
 			}
 		}
 
-		if (best_ratio > 1.0) {
+		if (best_index == -1) {
 			if (available(a.people())) {
 				deliver(a);
 			} else {
-				print("Warning: Ignoring phantom pizza with unavailable team "
-					  "({}/{}/{}) #ingredients={} size={}\n",
-					  T2 - t2, T3 - t3, T4 - t4, a.ingredients(), a.people());
+				print("Skip {} | t=({:3},{:3},{:3}) {}\n", a.str(), t2, t3, t4,
+					  string(30, ' '));
 			}
 		} else {
-			universe.erase(best);
-			Phantom ab = merge_phantoms(a, best);
+			swap(universe[best_index], universe.back());
+			Phantom b = universe.back();
+			universe.pop_back();
+
+			Phantom ab = merge_phantoms(a, b);
+			adjust(a.people(), b.people());
 			if (ab.people() == 4) {
 				deliver(ab);
 			} else {
-				universe.insert(ab);
+				universe.push_back(ab);
 			}
 		}
+
+		print("\rSTATUS: {:4} | {:9} | t=({:3},{:3},{:3}) {}\r",
+			  universe.size(), total_score, t2, t3, t4, string(30, ' '));
+		cout << flush;
 	}
+
+	print("\nScore: {}\n", total_score);
 }
 
 // *****

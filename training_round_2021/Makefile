@@ -61,4 +61,4 @@ clean:
 	@rm -f $(EXE) core vgcore.* *.log
 
 submit:
-	zip -r submission.zip code.cpp Makefile cpp-flags.make README.md
+	zip -r submission.zip code.cpp Makefile cpp-flags.make README.md greedy_solver.py

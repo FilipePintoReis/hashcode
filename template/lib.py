@@ -1,7 +1,7 @@
 class WordReader:
     def __init__(self, filename):
         with open(filename) as f:
-            self.words = [word for line in f for word in line.split()]
+            self.words = [word.strip() for line in f for word in line.split()]
             self.i = 0
         print(self.words)
 

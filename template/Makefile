@@ -1,13 +1,17 @@
+# Python run commands
+PYCODE := code.py
+PYRUN := python3
+
 # Compiler, gcc or clang
 COMPILER := gcc
 CPP_STANDARD := c++17
 
 # Compiler command
 CC := g++
-
 CODE := ./code.cpp
 EXE := ./hack
 LIBS := -lfmt
+HPP_FILES := lib.hpp
 INPUT_FILES := $(shell find input/ -type f)
 
 include cpp-flags.make
@@ -32,9 +36,17 @@ debug: CXXFLAGS += $(DEBUG)
 debug: $(EXE)
 
 # Main compilation rule
-$(EXE): $(CODE)
+$(EXE): $(CODE) $(HPP_FILES)
 	@echo "CC (${COMPILER} $(MODE))  $@"
 	@$(CXX) $(CODE) $(CXXFLAGS) -o $@
+
+# Run python on one file
+py python:
+	@read -e -p "Input file: " file ; $(PYRUN) $(PYCODE) $$file
+
+# Run python on each file
+pyeach pythoneach:
+	@for file in $(INPUT_FILES); do $(PYRUN) $(PYCODE) $$file ; done
 
 # Compile for debugging and run on current file
 run: debug
@@ -61,4 +73,4 @@ clean:
 	@rm -f $(EXE) core vgcore.* *.log
 
 submit:
-	zip -r submission.zip code.cpp Makefile cpp-flags.make README.md
+	zip -r submission.zip code.cpp lib.hpp Makefile cpp-flags.make README.md code.py

@@ -1,12 +1,17 @@
 #include "lib.hpp"
 
-void read(ifstream &in) {}
+void read(ifstream &in) { (void)in; }
 
-void write(ofstream &out) {}
+void write(ofstream &out) { (void)out; }
 
 // *****
 
-void stats(ofstream &out) {}
+void stats(ofstream &out) {
+	vector<int> vec(740);
+	for (int &u : vec)
+		u = rand() % 1337;
+	print(out, histogram(vec));
+}
 
 // *****
 

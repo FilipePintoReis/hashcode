@@ -11,6 +11,7 @@ CC := g++
 CODE := ./code.cpp
 EXE := ./hack
 LIBS := -lfmt
+HPP_FILES := lib.hpp
 INPUT_FILES := $(shell find input/ -type f)
 
 include cpp-flags.make
@@ -35,7 +36,7 @@ debug: CXXFLAGS += $(DEBUG)
 debug: $(EXE)
 
 # Main compilation rule
-$(EXE): $(CODE)
+$(EXE): $(CODE) $(HPP_FILES)
 	@echo "CC (${COMPILER} $(MODE))  $@"
 	@$(CXX) $(CODE) $(CXXFLAGS) -o $@
 

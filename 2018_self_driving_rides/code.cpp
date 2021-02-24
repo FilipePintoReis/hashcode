@@ -79,9 +79,7 @@ void write(ofstream &out) {
 // *****
 
 void stats(ofstream &out) {
-	int min_dist = *min_element(ALL(dists));
 	double avg_dist = 1.0 * accumulate(ALL(dists), 0L) / N;
-	int max_dist = *max_element(ALL(dists));
 
 	print(out, "{}x{} board\n", R, C);
 	print(out, "{} timesteps\n", T);
@@ -92,9 +90,6 @@ void stats(ofstream &out) {
 	print(out, "\n");
 
 	print(out, "Distances...\n");
-	print(out, "  min {}\n", min_dist);
-	print(out, "  avg {}\n", avg_dist);
-	print(out, "  max {}\n", max_dist);
 	print(out, "{}\n", histogram(dists));
 
 	print(out, "Earliest starts...\n");
@@ -103,15 +98,19 @@ void stats(ofstream &out) {
 	print(out, "Latest finishes...\n");
 	print(out, "{}\n", histogram(time_finish));
 
-	int compR = R, compC = C, ratio = 1;
-	while (compR > 200 || compC > 200)
-		compR = (compR + 1) / 2, compC = (compC + 1) / 2, ratio *= 2;
+	print(out, "Time start (horizontal) VS Time finish (vertical)...\n");
+	print(out, "{}\n", scatter(time_start, time_finish));
+
+	print(out, "Time start (horizontal) VS Distance...\n");
+	print(out, "{}\n", scatter(time_start, dists));
+
+	auto [compR, compC, ratioR, ratioC] = collapse2D(R, C);
 
 	vector<string> board(compR, string(compC, ' '));
 	for (int i = 0; i < N; i++) {
 		auto [a, b] = rides[i].start;
 		auto [x, y] = rides[i].finish;
-		a /= ratio, b /= ratio, x /= ratio, y /= ratio;
+		a /= ratioR, b /= ratioC, x /= ratioR, y /= ratioC;
 		board[a][b] = (board[a][b] == ' ' || board[a][b] == '@') ? '@' : '$';
 		board[x][y] = (board[x][y] == ' ' || board[x][y] == '#') ? '#' : '$';
 	}
@@ -119,10 +118,7 @@ void stats(ofstream &out) {
 	print(out, "   @ start points\n");
 	print(out, "   # finish points\n");
 	print(out, "   $ both\n");
-	print(out, "+{}+\n", string(compC, '-'));
-	for (const auto &row : board)
-		print(out, "|{}|\n", row);
-	print(out, "+{}+\n\n", string(compC, '-'));
+	print(out, "{}", make_box(board));
 }
 
 // *****
@@ -274,10 +270,10 @@ int main(int argc, char **argv) {
 	ofstream statsfile(replace_file_folder(filename, "stats"));
 	stats(statsfile);
 
-	solve();
-	judge_and_score();
+	// solve();
+	// judge_and_score();
 
-	ofstream outfile(replace_file_folder(filename, "output"));
-	write(outfile);
+	// ofstream outfile(replace_file_folder(filename, "output"));
+	// write(outfile);
 	return 0;
 }

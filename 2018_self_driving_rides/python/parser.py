@@ -67,7 +67,7 @@ class Info:
         self.ride_bonus = ride_bonus
         self.no_steps = no_steps
 
-        self.vehicle_map = {vehicle, [0,0]
+        self.vehicle_map = {(vehicle, [0,0]) 
                             for vehicle 
                             in range(no_vehicles)}
 

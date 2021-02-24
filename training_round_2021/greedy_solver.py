@@ -1,9 +1,19 @@
 import random
 
+mapper = {}
 class WordReader:
-    def __init__(self, filename):
+    def __init__(self, filename, mapper):
         with open(filename) as f:
             self.words = [word.strip() for line in f for word in line.split()]
+
+            no = 0
+            for word in self.words:
+                try:
+                    int(word)
+                except:
+                    mapper[word] = no
+                    no += 1
+
             self.i = 0
 
     def __call__(self, type=str):
@@ -13,19 +23,25 @@ class WordReader:
 class Pizza:
     def __init__(self, ingredients, index):
         self.ingredients = ingredients
+        self.ingredients.sort()
         self.index = index
 
     def diffs(self, other):
         ret = 0
 
-        for ing1 in self.ingredients:
-            f = False
-            for ing2 in other.ingredients:
-                if ing1 == ing2:
-                    f = True
+        i = 0
+        j = 0
 
-            if not f: ret += 1
-        
+        while i > len(self.ingredients) and j > len(other.ingredients):
+            if self.ingredients[i] > other.ingredients[j]:
+                i += 1
+            elif self.ingredients[i] < other.ingredients[j]:
+                j += 1
+            else:
+                ret += 1
+                i += 1
+                j += 1
+
         return ret
 
     def __repr__(self):
@@ -48,7 +64,7 @@ class Info:
     def __repr__(self):
         return self.pizzas
 
-reader = WordReader("training_round_2021/input/b_little_bit_of_everything.in")
+reader = WordReader("training_round_2021/input/e_many_teams.in", mapper)
 
 no_pizzas = reader(int)
 groups_2 = reader(int)
@@ -60,13 +76,19 @@ piz_index = 0
 for i in range(no_pizzas):
     ingredients = []
     for j in range(reader(int)):
-        ingredients.append(reader())
+        ingredients.append(mapper[reader()])
     pizzas.append(Pizza(ingredients, piz_index))
     piz_index += 1
 
 info = Info(groups_2, groups_3, groups_4, pizzas)
 
+print_no = int(len(info.pizzas) / 1000)
+
 while len(info.pizzas) >= 2:
+    if len(info.pizzas) <= (print_no * 1000):
+        print(len(info.pizzas))
+        print_no -= 1
+
     if info.number_4_p_teams > 0:
         info.number_4_p_teams -= 1
         no = 3
@@ -76,6 +98,8 @@ while len(info.pizzas) >= 2:
     elif info.number_2_p_teams > 0:
         info.number_2_p_teams -= 1
         no = 1
+    else:
+        break
 
     random_pizza = random.choice(info.pizzas)
     info.pizzas.remove(random_pizza)
@@ -97,7 +121,7 @@ while len(info.pizzas) >= 2:
     
     info.solution.append(random_pizza)
 
-with open("solution.txt", "w+") as sol_f:
+with open("solution_e.txt", "w+") as sol_f:
     sol_f.write(str(len(info.solution)))
     sol_f.write('\n')
     for solution in info.solution:

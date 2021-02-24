@@ -18,17 +18,19 @@ template <typename T>
 string histogram(const vector<T> &vec, int boxes = -1, int barlen = 80) {
 	int N = vec.size();
 	assert(N > 0);
-	auto lo = *min_element(begin(vec), end(vec));
-	auto hi = *max_element(begin(vec), end(vec));
-	boxes = boxes < 0 ? 2 * ceil(log10(N + 1)) : boxes;
+	auto lo = *min_element(ALL(vec));
+	auto hi = *max_element(ALL(vec));
+	boxes = boxes < 0 ? 5 * ceil(log10(N + 1)) : boxes;
+	boxes = min(boxes, N);
 	assert(boxes > 1);
 
-	vector<int> cnt(boxes);
+	vector<int> cnt(boxes, 0);
 	auto size = 1.0 * (hi - lo) / boxes;
 	for (auto u : vec) {
-		cnt[min(boxes - 1, int(floor((u - lo) / size)))]++;
+		int x = int(floor((u - lo) / size));
+		cnt[clamp(x, 0, boxes - 1)]++;
 	}
-	auto mode = *max_element(begin(cnt), end(cnt));
+	auto mode = *max_element(ALL(cnt));
 
 	int range_width = max(to_string(lo).length(), to_string(hi).length());
 	int cnt_width = to_string(mode).length();

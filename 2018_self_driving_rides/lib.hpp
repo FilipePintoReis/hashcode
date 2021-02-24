@@ -39,7 +39,7 @@ string histogram(const vector<T> &vec, int boxes = -1, int barlen = 80) {
 	for (int i = 0; i < boxes; i++) {
 		int len = 1.0 * barlen * cnt[i] / mode;
 		int L = int(ceil(lo + i * size));
-		int R = int(ceil(lo + (i + 1) * size - 1.0));
+		int R = max(L, int(ceil(lo + (i + 1) * size - 1.0)));
 		string bar;
 		while (len--)
 			bar += u8"█";

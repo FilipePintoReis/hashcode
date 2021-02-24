@@ -1,7 +1,7 @@
 10000x10000 board
 50000 timesteps
 400 taxis | 10000 rides
-  0.040 avg. rides per taxi
+  25.000 avg. rides per taxi
   2 bonus
 
 Distances...

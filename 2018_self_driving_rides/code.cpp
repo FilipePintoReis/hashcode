@@ -49,7 +49,7 @@ void stats(ofstream &out) {
 	print(out, "{}x{} board\n", R, C);
 	print(out, "{} timesteps\n", T);
 	print(out, "{} taxis | {} rides\n", F, N);
-	print(out, "  {:.3f} avg. rides per taxi\n", 1.0 * F / N);
+	print(out, "  {:.3f} avg. rides per taxi\n", 1.0 * N / F);
 	print(out, "  {} bonus\n", B);
 	print(out, "\n");
 

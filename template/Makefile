@@ -67,7 +67,7 @@ fasteach: perfm
 # Build in debug mode and run under valgrind
 valgrind: debug
 	@clear
-	@read -e -p "Input file:" file ; $(EXE) $$file
+	@read -e -p "Input file: " file ; valgrind $(EXE) $$file
 
 clean:
 	@rm -f $(EXE) core vgcore.* *.log

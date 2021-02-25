@@ -69,8 +69,10 @@ valgrind: debug
 	@clear
 	@read -e -p "Input file: " file ; valgrind $(EXE) $$file
 
+# Remove shit files
 clean:
 	@rm -f $(EXE) core vgcore.* *.log
 
+# Make submission zip
 submit:
 	zip -r submission.zip code.cpp lib.hpp Makefile cpp-flags.make README.md code.py

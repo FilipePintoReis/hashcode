@@ -127,6 +127,8 @@ auto histogram(const vector<int> &v, int bar_width = 80, int num_boxes = -1) {
 	int label_width = INTLEN(hist_max);
 	int count_width = INTLEN(top);
 
+	string previous_label, prev_row;
+
 	for (int x = 0; x < num_boxes; x++) {
 		int L = int(ceil(hist_min + x * box_width));
 		int R = max(L, int(ceil(hist_min + (x + 1) * box_width - 1.0)));
@@ -135,7 +137,10 @@ auto histogram(const vector<int> &v, int bar_width = 80, int num_boxes = -1) {
 		string label = format("{:>{}} {:>{}}", L, label_width, R, label_width);
 		string count = format("{:>{}}", box_cnt[x], count_width);
 		string bar = repeat(len, u8"█");
-		s += format("{} | {} | {}\n", label, count, bar);
+
+		if (label != previous_label && box_cnt[x] > 0) {
+			s += format("{} | {} | {}\n", label, count, bar);
+		}
 	}
 	return s;
 }

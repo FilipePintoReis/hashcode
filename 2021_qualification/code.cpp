@@ -1,53 +1,73 @@
 #include "lib.hpp"
 
-struct Street {
+struct Edge {
 	int id;
-	int B, E; // begin and end intersections
-	int L;    // length of the street, <=D
+	int B, E;  // begin and end nodes
+	int L = 0; // length of the street, <=D
 	int length() const { return L; }
 };
 
-struct Path {
-	int P;           // number of streets, <=1000
+struct Node {
+	int id;
+	vector<int> in, out;
+	int incnt() const { return in.size(); }
+	int outcnt() const { return out.size(); }
+};
+
+struct Car {
+	int P;           // number of edges, <=1000
 	vector<int> ids; // street ids, starts at end of first street
+	int L = 0;       // total length
 };
 
 int D; // duration of the simulation, <=10000
-int V; // number of intersections, <=100000
-int E; // number of streets, <= 100000
+int V; // number of nodes, <=100000
+int E; // number of edges, <= 100000
 int C; // number of cars, <=1000
 int F; // points for each car that reaches destination, <=1000
-vector<Street> streets;
-vector<Path> paths;
-vector<string> street_names;
+vector<Node> nodes;
+vector<Edge> edges;
+vector<Car> cars;
+vector<string> edge_names;
 
 void read_and_stats(ifstream &in, ofstream &out) {
 	in >> D >> V >> E >> C >> F;
-	streets.resize(E);
-	paths.resize(C);
-	street_names.resize(E);
-
-	for (int i = 0; i < E; i++) {
-		auto &[id, B, E, L] = streets[i];
-		id = i, in >> B >> E >> street_names[i] >> L;
-	}
-	for (int i = 0; i < C; i++) {
-		auto &[P, ids] = paths[i];
-		in >> P;
-		ids.resize(P);
-		for (int j = 0; j < P; j++)
-			in >> ids[j];
-	}
+	nodes.resize(V);
+	edges.resize(E);
+	cars.resize(C);
+	edge_names.resize(E);
 
 	vector<int> cnt_outgoing(V, 0);
 	vector<int> cnt_incoming(V, 0);
-	vector<int> street_L(E, 0);
+	vector<int> edge_L(E, 0);
+	vector<int> cars_L(C, 0);
+	vector<int> cars_P(C, 0);
 
 	for (int i = 0; i < E; i++) {
-		const auto &[id, B, E, L] = streets[i];
+		auto &[id, B, E, L] = edges[i];
+		id = i, in >> B >> E >> edge_names[i] >> L;
+
 		cnt_outgoing[B]++;
 		cnt_incoming[E]++;
-		street_L[i] = L;
+		edge_L[i] = L;
+	}
+	for (int i = 0; i < C; i++) {
+		auto &[P, ids, L] = cars[i];
+		in >> P, ids.resize(P);
+		for (int j = 0; j < P; j++) {
+			in >> ids[j];
+			L += j > 0 ? edges[ids[j]].L : 0;
+		}
+
+		cars_L[i] = L;
+		cars_P[i] = P;
+	}
+
+	long perfect_score = 0;
+	for (int i = 0; i < C; i++) {
+		if (cars[i].L < D) {
+			perfect_score += (D - cars[i].L) + F;
+		}
 	}
 
 	print(out, "{} nodes / {} edges\n", V, E);
@@ -55,9 +75,13 @@ void read_and_stats(ifstream &in, ofstream &out) {
 	print(out, "{} bonus points\n", F);
 	print(out, "{} duration\n", D);
 
+	print(out, "Theoretical perfect score: {}\n", perfect_score);
+
 	print(out, "Outgoing distribution\n{}\n", histogram(cnt_outgoing));
 	print(out, "Incoming distribution\n{}\n", histogram(cnt_incoming));
-	print(out, "Individual street lengths\n{}\n", histogram(street_L));
+	print(out, "Individual street lengths\n{}\n", histogram(edge_L));
+	print(out, "Car path lengths\n{}\n", histogram(cars_L));
+	print(out, "Car path street counts\n{}\n", histogram(cars_P));
 }
 
 void write(ofstream &out) {}

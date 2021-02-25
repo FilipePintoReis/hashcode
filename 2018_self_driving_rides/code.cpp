@@ -166,6 +166,7 @@ int compute_penalty(const TaxiPlan &taxi, Ride ride) {
 	int is_late = arrives > ride.earliest_start() ? B : 0;
 
 	// heuristics...
+	// quanto mais perto do fim 
 
 	return 2 * commute + 3 * waits + 9 * is_late;
 }

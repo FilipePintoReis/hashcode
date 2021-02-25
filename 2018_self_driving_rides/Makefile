@@ -8,8 +8,8 @@ CPP_STANDARD := c++17
 
 # Compiler command
 CC := g++
-CODE := ./code.cpp
-EXE := ./hack
+CODE := code.cpp
+EXE := hack
 LIBS := -lfmt
 HPP_FILES := lib.hpp
 INPUT_FILES := $(shell find input/ -type f)

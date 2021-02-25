@@ -29,6 +29,7 @@ vector<Node> nodes;
 vector<Edge> edges;
 vector<Car> cars;
 vector<string> edge_names;
+unordered_map<string, int> edge_names_rev;
 
 void read_and_stats(ifstream &in, ofstream &out) {
 	in >> D >> V >> E >> C >> F;
@@ -46,6 +47,7 @@ void read_and_stats(ifstream &in, ofstream &out) {
 	for (int i = 0; i < E; i++) {
 		auto &[id, B, E, L] = edges[i];
 		id = i, in >> B >> E >> edge_names[i] >> L;
+		edge_names_rev[edge_names[i]] = i;
 
 		cnt_outgoing[B]++;
 		cnt_incoming[E]++;
@@ -55,8 +57,10 @@ void read_and_stats(ifstream &in, ofstream &out) {
 		auto &[P, ids, L] = cars[i];
 		in >> P, ids.resize(P);
 		for (int j = 0; j < P; j++) {
-			in >> ids[j];
-			L += j > 0 ? edges[ids[j]].L : 0;
+			string name;
+			in >> name;
+			int id = edge_names_rev[name];
+			ids[j] = id, L += j > 0 ? edges[id].L : 0;
 		}
 
 		cars_L[i] = L;

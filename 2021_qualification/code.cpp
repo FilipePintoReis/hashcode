@@ -1,12 +1,6 @@
 #include "lib.hpp"
 
-void read_and_stats(ifstream &in, ofstream &out) {
-	vector<int> x(40000);
-	vector<int> y(40000);
-	for (int i = 0; i < 40000; i++)
-		x[i] = rand() % 700, y[i] = rand() % 700;
-	print(out, "{}", scatter(x, y));
-}
+void read_and_stats(ifstream &in, ofstream &out) {}
 
 void write(ofstream &out) {}
 

@@ -1,16 +1,18 @@
 #include "lib.hpp"
 
-void read(ifstream &in) {}
+void read_and_stats(ifstream &in, ofstream &out) {
+	vector<int> x(40000);
+	vector<int> y(40000);
+	for (int i = 0; i < 40000; i++)
+		x[i] = rand() % 700, y[i] = rand() % 700;
+	print(out, "{}", scatter(x, y));
+}
 
 void write(ofstream &out) {}
 
 // *****
 
-void stats(ofstream &out) {}
-
-// *****
-
-void solve() {}
+void solve(char which) {}
 
 // *****
 
@@ -20,21 +22,17 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	string filename = argv[1];
-	ifstream inputfile(filename);
-	if (!inputfile.is_open()) {
-		print("Failed to open input '{}'\n", filename);
-		return 1;
-	}
-
 	print("Running... {}\n", filename);
-	read(inputfile);
 
+	ifstream inputfile(filename);
 	ofstream statsfile(replace_file_folder(filename, "stats"));
-	stats(statsfile);
-
-	// solve();
-
 	ofstream outfile(replace_file_folder(filename, "output"));
+	assert(inputfile.is_open());
+	assert(statsfile.is_open());
+	assert(outfile.is_open());
+
+	read_and_stats(inputfile, statsfile);
+	solve(deduce_input_file(filename));
 	write(outfile);
 	return 0;
 }

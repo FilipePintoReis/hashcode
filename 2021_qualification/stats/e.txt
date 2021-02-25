@@ -3,7 +3,7 @@
 500 bonus points
 676 duration
 Theoretical perfect score: 920703
-Outgoing distribution
+Outgoing edges
   min 1
   avg 1.996
   max 249
@@ -11,13 +11,29 @@ Outgoing distribution
   1  17 | 499 | ████████████████████████████████████████████████████████████████████████████████
 233 249 |   1 | █
 
-Incoming distribution
+Incoming edges
   min 1
   avg 1.996
   max 250
   dev 11.091
   1  17 | 499 | ████████████████████████████████████████████████████████████████████████████████
 234 250 |   1 | █
+
+Outgoing cars
+  min 2
+  avg 12.102
+  max 812
+  dev 35.965
+  2  55 | 499 | ████████████████████████████████████████████████████████████████████████████████
+758 811 |   1 | █
+
+Incoming cars
+  min 2
+  avg 12.102
+  max 622
+  dev 27.520
+  2  43 | 499 | ████████████████████████████████████████████████████████████████████████████████
+581 621 |   1 | █
 
 Individual street lengths
   min 1

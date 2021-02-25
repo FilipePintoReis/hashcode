@@ -8,6 +8,19 @@ using fmt::print, fmt::format;
 #define ALL(v) begin(v), end(v)
 #define INTLEN(x) to_string(x).length()
 
+struct pair_hasher {
+	template <typename U, typename V>
+	size_t operator()(const pair<U, V> &p) const noexcept {
+		size_t a = p.first, b = p.second;
+		return (a + b) * (a + b + 1) / 2 + b;
+	}
+	template <typename U>
+	size_t operator()(const array<U, 2> &p) const noexcept {
+		size_t a = p[0], b = p[1];
+		return (a + b) * (a + b + 1) / 2 + b;
+	}
+};
+
 // return a, b, c, ...
 auto deduce_input_file(string filename) {
 	auto i = filename.find('/');

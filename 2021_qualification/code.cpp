@@ -2,69 +2,120 @@
 
 struct Edge {
 	int id;
-	int B, E;  // begin and end nodes
+	int u, v;  // begin and end nodes
 	int L = 0; // length of the street, <=D
 	int length() const { return L; }
-};
-
-struct Node {
-	int id;
-	vector<int> in, out;
-	int incnt() const { return in.size(); }
-	int outcnt() const { return out.size(); }
 };
 
 struct Car {
 	int P;           // number of edges, <=1000
 	vector<int> ids; // street ids, starts at end of first street
-	int L = 0;       // total length
+	int L = 0;       // total length of the path
 };
+
+struct Light {
+	int id; // street id
+	int duration;
+};
+
+using Schedule = vector<Light>;
 
 int D; // duration of the simulation, <=10000
 int V; // number of nodes, <=100000
 int E; // number of edges, <= 100000
 int C; // number of cars, <=1000
 int F; // points for each car that reaches destination, <=1000
-vector<Node> nodes;
+unordered_map<string, int> edge_names_rev;
+unordered_map<pair<int, int>, int, pair_hasher> edgemap;
+vector<string> edge_names;
+
 vector<Edge> edges;
 vector<Car> cars;
-vector<string> edge_names;
-unordered_map<string, int> edge_names_rev;
+vector<vector<int>> in_edges, out_edges; // list of edges through each node
+vector<vector<int>> in_cars, out_cars;   // list of cars through each node
+vector<vector<int>> cars_through;        // list of cars through each edge
+
+vector<int> cnt_out_edges(V, 0);
+vector<int> cnt_in_edges(V, 0);
+vector<int> cnt_out_cars(V, 0);
+vector<int> cnt_in_cars(V, 0);
+vector<int> cnt_cars_through(E, 0);
+vector<int> cnt_starting_edge(V, 0);
+vector<int> cnt_starting_node(V, 0);
+vector<int> edge_L(E, 0);
+vector<int> cars_L(C, 0);
+vector<int> cars_P(C, 0);
+
+vector<Schedule> schedules; // the solution
 
 void read_and_stats(ifstream &in, ofstream &out) {
 	in >> D >> V >> E >> C >> F;
-	nodes.resize(V);
 	edges.resize(E);
 	cars.resize(C);
 	edge_names.resize(E);
 
-	vector<int> cnt_outgoing(V, 0);
-	vector<int> cnt_incoming(V, 0);
-	vector<int> edge_L(E, 0);
-	vector<int> cars_L(C, 0);
-	vector<int> cars_P(C, 0);
+	in_edges.resize(V);
+	out_edges.resize(V);
+	in_cars.resize(V);
+	out_cars.resize(V);
+	cars_through.resize(E);
 
-	for (int i = 0; i < E; i++) {
-		auto &[id, B, E, L] = edges[i];
-		id = i, in >> B >> E >> edge_names[i] >> L;
-		edge_names_rev[edge_names[i]] = i;
+	schedules.resize(V);
 
-		cnt_outgoing[B]++;
-		cnt_incoming[E]++;
-		edge_L[i] = L;
+	cnt_out_edges.assign(V, 0);
+	cnt_in_edges.assign(V, 0);
+	cnt_out_cars.assign(V, 0);
+	cnt_in_cars.assign(V, 0);
+	cnt_cars_through.assign(E, 0);
+	cnt_starting_edge.assign(E, 0);
+	cnt_starting_node.assign(V, 0);
+	edge_L.assign(E, 0);
+	cars_L.assign(C, 0);
+	cars_P.assign(C, 0);
+
+	for (int e = 0; e < E; e++) {
+		auto &[id, u, v, L] = edges[e];
+		id = e, in >> u >> v >> edge_names[e] >> L;
+		edge_names_rev[edge_names[e]] = e;
+		edgemap[{u, v}] = e;
+
+		out_edges[u].push_back(e);
+		in_edges[v].push_back(e);
+		cnt_out_edges[u]++;
+		cnt_in_edges[v]++;
+		edge_L[e] = L;
 	}
-	for (int i = 0; i < C; i++) {
-		auto &[P, ids, L] = cars[i];
+	for (int c = 0; c < C; c++) {
+		auto &[P, ids, L] = cars[c];
 		in >> P, ids.resize(P);
 		for (int j = 0; j < P; j++) {
 			string name;
 			in >> name;
 			int id = edge_names_rev[name];
 			ids[j] = id, L += j > 0 ? edges[id].L : 0;
-		}
 
-		cars_L[i] = L;
-		cars_P[i] = P;
+			cars_through[id].push_back(c);
+		}
+		int e = ids[0];
+		int start = edges[e].v;
+
+		cnt_starting_edge[e]++;
+		cnt_starting_node[start]++;
+		cars_L[c] = L;
+		cars_P[c] = P;
+	}
+
+	for (int e = 0; e < E; e++) {
+		for (int car : cars_through[e]) {
+			out_cars[edges[e].u].push_back(car);
+			in_cars[edges[e].v].push_back(car);
+		}
+		cnt_cars_through[e] = cars_through[e].size();
+	}
+
+	for (int i = 0; i < V; i++) {
+		cnt_out_cars[i] = out_cars[i].size();
+		cnt_in_cars[i] = in_cars[i].size();
 	}
 
 	long perfect_score = 0;
@@ -78,21 +129,167 @@ void read_and_stats(ifstream &in, ofstream &out) {
 	print(out, "{} cars\n", C);
 	print(out, "{} bonus points\n", F);
 	print(out, "{} duration\n", D);
-
 	print(out, "Theoretical perfect score: {}\n", perfect_score);
 
-	print(out, "Outgoing distribution\n{}\n", histogram(cnt_outgoing));
-	print(out, "Incoming distribution\n{}\n", histogram(cnt_incoming));
+	print(out, "Outgoing edges\n{}\n", histogram(cnt_out_edges));
+	print(out, "Incoming edges\n{}\n", histogram(cnt_in_edges));
+	print(out, "Outgoing cars\n{}\n", histogram(cnt_out_cars));
+	print(out, "Incoming cars\n{}\n", histogram(cnt_in_cars));
 	print(out, "Individual street lengths\n{}\n", histogram(edge_L));
 	print(out, "Car path lengths\n{}\n", histogram(cars_L));
 	print(out, "Car path street counts\n{}\n", histogram(cars_P));
 }
 
-void write(ofstream &out) {}
+void write(ofstream &out) {
+	int A = 0;
+	for (int u = 0; u < V; u++)
+		A += !schedules[u].empty();
+
+	print(out, "{}\n", A);
+	for (int u = 0; u < V; u++) {
+		if (!schedules[u].empty()) {
+			print(out, "{}\n{}\n", u, schedules[u].size());
+			for (auto [e, duration] : schedules[u]) {
+				print(out, "{} {}\n", edge_names[e], duration);
+			}
+		}
+	}
+}
+
+long simulate(bool show_details = false) {
+	vector<uint> light(V, 0);    // index of the current light that is green
+	vector<int> countdown(V, 0); // remaining green time
+	vector<int> road(C, 0);      // index of the edge the car is in
+	vector<int> dist(C, 0);      // remaining distance for the car to travel
+
+	vector<queue<int>> waiting(E); // list of cars waiting
+	vector<bool> done(C, false);
+	vector<int> reach(C, -1);
+
+	for (int c = 0; c < C; c++) {
+		int e = cars[c].ids[0];
+		waiting[e].push(c);
+	}
+
+	for (int t = 0; t < D; t++) {
+		for (int u = 0; u < V; u++) {
+			if (schedules[u].empty())
+				continue;
+
+			int e = schedules[u][light[u]].id;
+
+			if (!waiting[e].empty()) {
+				int c = waiting[e].front();
+				waiting[e].pop();
+
+				road[c]++;
+				int f = cars[c].ids[road[c]];
+				if (road[c] == cars[c].P - 1) {
+					done[c] = true;
+					reach[c] = t + edges[f].L;
+				} else {
+					dist[c] = edges[f].L;
+				}
+			}
+
+			if (++countdown[u] == schedules[u][light[u]].duration) {
+				if (++light[u] == schedules[u].size()) {
+					light[u] = 0;
+				}
+				countdown[u] = 0;
+			}
+		}
+
+		for (int c = 0; c < C; c++) {
+			if (!done[c] && dist[c] > 0 && --dist[c] == 0) {
+				int f = cars[c].ids[road[c]];
+				waiting[f].push(c);
+			}
+		}
+	}
+
+	int got_there = 0;
+	int score_on_time = 0;
+	int score_on_bonus = 0;
+	int total_time = 0;
+
+	for (int c = 0; c < C; c++) {
+		if (reach[c] >= 0 && reach[c] <= D) {
+			got_there++;
+			score_on_time += D - reach[c];
+			score_on_bonus += F;
+			total_time += reach[c];
+		}
+	}
+
+	if (show_details) {
+		print("Score: {}\n", score_on_time + score_on_bonus);
+		print("  {}  time\n  {}  bonus\n", score_on_time, score_on_bonus);
+		print("  Cars reached: {}/{}\n", got_there, C);
+		print("  Average time: {:.3f}\n", 1.0 * total_time / got_there);
+	}
+	return score_on_time + score_on_bonus;
+}
 
 // *****
 
-void solve(char which) {}
+void solve_one_second() {
+	for (int u = 0; u < V; u++) {
+		for (int e : in_edges[u]) {
+			schedules[u].push_back({e, 1});
+		}
+	}
+}
+
+int solve_ratio(int div) {
+	schedules.assign(V, {});
+	for (int u = 0; u < V; u++) {
+		for (int e : in_edges[u]) {
+			int cars = cars_through[e].size();
+			if (cars > 0) {
+				schedules[u].push_back({e, (cars + div - 1) / div});
+			}
+			sort(ALL(schedules[u]), [&](Light a, Light b) {
+				if (cnt_starting_edge[a.id] != cnt_starting_edge[b.id])
+					return cnt_starting_edge[a.id] > cnt_starting_edge[b.id];
+				else if (cars_through[a.id] != cars_through[b.id])
+					return cars_through[a.id] > cars_through[b.id];
+				else
+					return a.id < b.id;
+			});
+		}
+	}
+	return simulate();
+}
+
+void solve_in_count() {
+	int best_div = 1;
+	int best_score = 0;
+	for (int div = 1; div <= 25; div++) {
+		int score = solve_ratio(div);
+		if (score > best_score) {
+			best_div = div;
+			best_score = score;
+		}
+	}
+	solve_ratio(best_div);
+	print("Score: {} (div {})\n", best_score, best_div);
+}
+
+void solve(char which) {
+	if (which == 'b')
+		return solve_in_count();
+	if (which == 'c')
+		return solve_in_count();
+	if (which == 'd')
+		return solve_in_count();
+	if (which == 'e')
+		return solve_in_count();
+	if (which == 'f')
+		return solve_in_count();
+
+	solve_in_count();
+}
 
 // *****
 

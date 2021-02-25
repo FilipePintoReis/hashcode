@@ -22,7 +22,7 @@ using Schedule = vector<Light>;
 
 int D; // duration of the simulation, <=10000
 int V; // number of nodes, <=100000
-int E; // number of edges, <= 100000
+int E; // number of edges, <=100000
 int C; // number of cars, <=1000
 int F; // points for each car that reaches destination, <=1000
 unordered_map<string, int> edge_names_rev;
@@ -85,6 +85,7 @@ void read_and_stats(ifstream &in, ofstream &out) {
 		cnt_in_edges[v]++;
 		edge_L[e] = L;
 	}
+
 	for (int c = 0; c < C; c++) {
 		auto &[P, ids, L] = cars[c];
 		in >> P, ids.resize(P);
@@ -120,7 +121,7 @@ void read_and_stats(ifstream &in, ofstream &out) {
 
 	long perfect_score = 0;
 	for (int i = 0; i < C; i++) {
-		if (cars[i].L < D) {
+		if (cars[i].L <= D) {
 			perfect_score += (D - cars[i].L) + F;
 		}
 	}
@@ -138,6 +139,9 @@ void read_and_stats(ifstream &in, ofstream &out) {
 	print(out, "Individual street lengths\n{}\n", histogram(edge_L));
 	print(out, "Car path lengths\n{}\n", histogram(cars_L));
 	print(out, "Car path street counts\n{}\n", histogram(cars_P));
+
+	print(out, "Incoming cars VS incoming edges\n{}\n",
+		  scatter(cnt_in_cars, cnt_in_edges));
 }
 
 void write(ofstream &out) {
@@ -233,6 +237,38 @@ long simulate(bool show_details = false) {
 
 // *****
 
+auto hill_climbing(int iterations = 50) {
+	int score = simulate();
+
+	while (iterations--) {
+		auto save = schedules;
+		int improvements = 0;
+
+		default_random_engine mt(random_device{}());
+		bernoulli_distribution dist(150.0 / V);
+
+		for (int u = 0; u < V; u++) {
+			if (dist(mt)) {
+				shuffle(ALL(schedules[u]), mt);
+			}
+		}
+
+		int new_score = simulate();
+		if (new_score > score) {
+			improvements++;
+			iterations++;
+			score = new_score;
+		} else {
+			schedules = save;
+		}
+		print("Score: {} ({})  \r", score, iterations);
+		cout << flush;
+	}
+	print("\n");
+
+	return score;
+}
+
 void solve_one_second() {
 	for (int u = 0; u < V; u++) {
 		for (int e : in_edges[u]) {
@@ -241,54 +277,81 @@ void solve_one_second() {
 	}
 }
 
-int solve_ratio(int div) {
+auto solve_dynamic_ratio() {
+	schedules.assign(V, {});
+	for (int u = 0; u < V; u++) {
+		int total_cars = cnt_in_cars[u];
+		double weight = 1.0 * total_cars / D;
+		double div = 0.2 / weight;
+		for (int e : in_edges[u]) {
+			int cars = cars_through[e].size();
+			if (cars > 0) {
+				schedules[u].push_back({e, int(ceil(cars / div))});
+			}
+		}
+		sort(ALL(schedules[u]), [&](Light a, Light b) {
+			if (cnt_starting_edge[a.id] != cnt_starting_edge[b.id])
+				return cnt_starting_edge[a.id] > cnt_starting_edge[b.id];
+			else if (cars_through[a.id] != cars_through[b.id])
+				return cars_through[a.id] > cars_through[b.id];
+			else
+				return a.id < b.id;
+		});
+	}
+	int score = simulate();
+	print("Score: {}\n", score);
+}
+
+auto solve_ratio(double div) {
 	schedules.assign(V, {});
 	for (int u = 0; u < V; u++) {
 		for (int e : in_edges[u]) {
 			int cars = cars_through[e].size();
 			if (cars > 0) {
-				schedules[u].push_back({e, (cars + div - 1) / div});
+				schedules[u].push_back({e, int(ceil(cars / div))});
 			}
-			sort(ALL(schedules[u]), [&](Light a, Light b) {
-				if (cnt_starting_edge[a.id] != cnt_starting_edge[b.id])
-					return cnt_starting_edge[a.id] > cnt_starting_edge[b.id];
-				else if (cars_through[a.id] != cars_through[b.id])
-					return cars_through[a.id] > cars_through[b.id];
-				else
-					return a.id < b.id;
-			});
 		}
+		sort(ALL(schedules[u]), [&](Light a, Light b) {
+			if (cnt_starting_edge[a.id] != cnt_starting_edge[b.id])
+				return cnt_starting_edge[a.id] > cnt_starting_edge[b.id];
+			else if (cars_through[a.id] != cars_through[b.id])
+				return cars_through[a.id] > cars_through[b.id];
+			else
+				return a.id < b.id;
+		});
 	}
-	return simulate();
+	return hill_climbing(400);
 }
 
-void solve_in_count() {
-	int best_div = 1;
+auto solve_in_count(double lo, double hi, double increment) {
+	double best_div = 1.0;
 	int best_score = 0;
-	for (int div = 1; div <= 25; div++) {
+	for (double div = lo; div <= hi; div += increment) {
 		int score = solve_ratio(div);
 		if (score > best_score) {
 			best_div = div;
 			best_score = score;
+			print("\rBest: {} (div {:.2f})   \r", best_score, best_div);
+			cout << flush;
 		}
 	}
 	solve_ratio(best_div);
-	print("Score: {} (div {})\n", best_score, best_div);
+	print("Score: {} (div {:.2f})\n", best_score, best_div);
 }
 
-void solve(char which) {
+auto solve(char which) {
 	if (which == 'b')
-		return solve_in_count();
+		return solve_ratio(5.55);
 	if (which == 'c')
-		return solve_in_count();
+		return solve_ratio(14.50);
 	if (which == 'd')
-		return solve_in_count();
+		return solve_ratio(7.09);
 	if (which == 'e')
-		return solve_in_count();
+		return solve_ratio(3.10);
 	if (which == 'f')
-		return solve_in_count();
+		return solve_ratio(37.40);
 
-	solve_in_count();
+	return solve_ratio(1);
 }
 
 // *****
@@ -309,7 +372,7 @@ int main(int argc, char **argv) {
 	assert(outfile.is_open());
 
 	read_and_stats(inputfile, statsfile);
-	solve(deduce_input_file(filename));
-	write(outfile);
+	// solve(deduce_input_file(filename));
+	// write(outfile);
 	return 0;
 }
